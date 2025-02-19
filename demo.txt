@@ -1,6 +1,6 @@
 Register a new app:
 
-bashCopycurl -X POST http://localhost:3000/api/v1/registerApp \
+curl -X POST http://localhost:3000/api/v1/registerApp \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
@@ -11,11 +11,11 @@ bashCopycurl -X POST http://localhost:3000/api/v1/registerApp \
 
 Get the app metadata (replace APP_ID with the ID received from step 1):
 
-bashCopycurl http://localhost:3000/api/v1/appMetadata/APP_ID
+curl http://localhost:3000/api/v1/appMetadata/APP_ID
 
 Update the app (replace APP_ID with the ID from step 1):
 
-bashCopycurl -X PUT http://localhost:3000/api/v1/updateApp \
+curl -X PUT http://localhost:3000/api/v1/updateApp \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
@@ -27,7 +27,7 @@ bashCopycurl -X PUT http://localhost:3000/api/v1/updateApp \
 
 Create a new role for the app (replace APP_ID with the ID from step 1):
 
-bashCopycurl -X POST http://localhost:3000/api/v1/createRole \
+curl -X POST http://localhost:3000/api/v1/createRole \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
@@ -51,11 +51,11 @@ bashCopycurl -X POST http://localhost:3000/api/v1/createRole \
 
 Get the role (replace APP_ID and ROLE_ID with the IDs from steps 1 and 4):
 
-bashCopycurl http://localhost:3000/api/v1/role/APP_ID/ROLE_ID
+curl http://localhost:3000/api/v1/role/APP_ID/ROLE_ID
 
 Update the role (replace APP_ID and ROLE_ID with the IDs from steps 1 and 4):
 
-bashCopycurl -X PUT http://localhost:3000/api/v1/updateRole \
+curl -X PUT http://localhost:3000/api/v1/updateRole \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
