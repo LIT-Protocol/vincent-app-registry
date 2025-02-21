@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { z } from 'zod';
-import { App, Role } from '../models/appModels';
 import { v4 as uuidv4 } from 'uuid';
-import { ethers } from 'ethers';
+import { z } from 'zod';
+
+import { App, Role } from '../models/appModels';
 
 // Utility function to generate unique IDs
 const generateUniqueId = () => uuidv4();
@@ -21,50 +21,55 @@ const verifySIWEMessage = async (signedMessage: string): Promise<{ address: stri
 };
 */
 // Utility function to verify SIWE message (placeholder)
-const verifySIWEMessage = async (signedMessage: string): Promise<{ address: string }> => {
+const verifySIWEMessage = async (/* _signedMessage: string */): Promise<{ address: string }> =>
   // Implement SIWE verification logic here
   // For now, we'll just return a dummy address
-  return { address: '0x1234567890123456789012345678901234567890' };
-};
-
+  ({ address: '0x1234567890123456789012345678901234567890' });
 // Define Zod schemas for input validation
 const registerAppSchema = z.object({
-  signedMessage: z.string(),
-  appName: z.string(),
   appDescription: z.string(),
-  email: z.string().email()
+  appName: z.string(),
+  email: z.string().email(),
+  signedMessage: z.string(),
 });
 
 export const registerApp = async (req: Request, res: Response) => {
   try {
-    const { signedMessage, appName, appDescription, email } = registerAppSchema.parse(req.body);
-    
+    const { appDescription, appName, email /* , signedMessage */ } = registerAppSchema.parse(
+      req.body
+    );
+
     // Verify SIWE message and extract management wallet address
-    const { address: managementWallet } = await verifySIWEMessage(signedMessage);
+    const { address: managementWallet } = await verifySIWEMessage(/* signedMessage */);
 
     // Check if the management wallet is already registered
     const existingApp = await App.findOne({ managementWallet });
     if (existingApp) {
-      return res.status(400).json({ success: false, message: 'Management wallet already registered' });
+      res.status(400).json({ message: 'Management wallet already registered', success: false });
+      return;
     }
 
     const appId = generateUniqueId();
     const newApp = new App({
       appId,
-      name: appName,
-      description: appDescription,
       managementWallet,
-      contactEmail: email
+      contactEmail: email,
+      description: appDescription,
+      name: appName,
     });
 
     await newApp.save();
 
-    res.json({ success: true, data: { appId, appName } });
+    res.json({ data: { appId, appName }, success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ success: false, message: error.errors });
+      res.status(400).json({ message: error.errors, success: false });
+      return;
     }
-    res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
   }
 };
 
@@ -74,40 +79,47 @@ export const getAppMetadata = async (req: Request, res: Response) => {
     const app = await App.findOne({ appId });
 
     if (!app) {
-      return res.status(404).json({ success: false, message: 'App not found' });
+      res.status(404).json({ message: 'App not found', success: false });
+      return;
     }
 
     res.json({
-      success: true,
       data: {
         appId: app.appId,
         appName: app.name,
-        logo: app.logo
-      }
+        logo: app.logo,
+      },
+      success: true,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
   }
 };
 
 const updateAppSchema = z.object({
-  signedMessage: z.string(),
+  appDescription: z.string(),
   appId: z.string(),
   appName: z.string(),
-  appDescription: z.string(),
-  email: z.string().email()
+  email: z.string().email(),
+  signedMessage: z.string(),
 });
 
 export const updateApp = async (req: Request, res: Response) => {
   try {
-    const { signedMessage, appId, appName, appDescription, email } = updateAppSchema.parse(req.body);
+    const { appDescription, appId, appName, email /* , signedMessage */ } = updateAppSchema.parse(
+      req.body
+    );
 
     // Verify SIWE message and extract management wallet address
-    const { address: managementWallet } = await verifySIWEMessage(signedMessage);
+    const { address: managementWallet } = await verifySIWEMessage(/* signedMessage */);
 
     const app = await App.findOne({ appId, managementWallet });
     if (!app) {
-      return res.status(404).json({ success: false, message: 'App not found or unauthorized' });
+      res.status(404).json({ message: 'App not found or unauthorized', success: false });
+      return;
     }
 
     app.name = appName;
@@ -116,83 +128,95 @@ export const updateApp = async (req: Request, res: Response) => {
 
     await app.save();
 
-    res.json({ success: true, data: { appId } });
+    res.json({ data: { appId }, success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ success: false, message: error.errors });
+      res.status(400).json({ message: error.errors, success: false });
+      return;
     }
-    res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
   }
 };
 
 const toolPolicySchema = z.object({
-  toolIpfsCid: z.string(),
   policyIpfsCid: z.string(),
-  policyVarsSchema: z.array(z.object({
-    paramName: z.string(),
-    valueType: z.string(),
-    defaultValue: z.any()
-  }))
+  policyVarsSchema: z.array(
+    z.object({
+      defaultValue: z.any(),
+      paramName: z.string(),
+      valueType: z.string(),
+    })
+  ),
+  toolIpfsCid: z.string(),
 });
 
 const createRoleSchema = z.object({
-  signedMessage: z.string(),
   appId: z.string(),
-  roleName: z.string(),
   roleDescription: z.string(),
-  toolPolicy: z.array(toolPolicySchema)
+  roleName: z.string(),
+  signedMessage: z.string(),
+  toolPolicy: z.array(toolPolicySchema),
 });
 
 export const createRole = async (req: Request, res: Response) => {
   try {
-    const { signedMessage, appId, roleName, roleDescription, toolPolicy } = createRoleSchema.parse(req.body);
+    const { appId, roleDescription, roleName, /* signedMessage, */ toolPolicy } =
+      createRoleSchema.parse(req.body);
 
     // Verify SIWE message and extract management wallet address
-    const { address: managementWallet } = await verifySIWEMessage(signedMessage);
+    const { address: managementWallet } = await verifySIWEMessage(/* signedMessage */);
 
     const app = await App.findOne({ appId, managementWallet });
     if (!app) {
-      return res.status(404).json({ success: false, message: 'App not found or unauthorized' });
+      res.status(404).json({ message: 'App not found or unauthorized', success: false });
+      return;
     }
 
     const roleId = uuidv4();
     const newRole = new Role({
-      roleId,
       appId,
-      name: roleName,
+      roleId,
       description: roleDescription,
-      version: 'init',
       lastUpdated: new Date(),
-      toolPolicy: toolPolicy.map(tp => ({
-        toolId: uuidv4(),
-        toolIpfsCid: tp.toolIpfsCid,
+      name: roleName,
+      toolPolicy: toolPolicy.map((tp) => ({
         policyId: uuidv4(),
         policyIpfsCid: tp.policyIpfsCid,
-        policyVarsSchema: tp.policyVarsSchema.map(pvs => ({
+        policyVarsSchema: tp.policyVarsSchema.map((pvs) => ({
+          defaultValue: pvs.defaultValue,
           paramId: uuidv4(),
           paramName: pvs.paramName,
-          valueType: pvs.valueType,
-          defaultValue: pvs.defaultValue // Ensure this is always present
-        }))
-      }))
+          valueType: pvs.valueType, // Ensure this is always present
+        })),
+        toolId: uuidv4(),
+        toolIpfsCid: tp.toolIpfsCid,
+      })),
+      version: 'init',
     });
 
     await newRole.save();
 
     res.json({
-      success: true,
       data: {
         appId,
         roleId,
+        lastUpdated: newRole.lastUpdated,
         roleVersion: 'init',
-        lastUpdated: newRole.lastUpdated
-      }
+      },
+      success: true,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ success: false, message: error.errors });
+      res.status(400).json({ message: error.errors, success: false });
+      return;
     }
-    res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
   }
 };
 
@@ -202,90 +226,107 @@ export const getRole = async (req: Request, res: Response) => {
     const role = await Role.findOne({ appId, roleId });
 
     if (!role) {
-      return res.status(404).json({ success: false, message: 'Role not found' });
+      res.status(404).json({ message: 'Role not found', success: false });
+      return;
     }
 
     res.json({
-      success: true,
       data: {
         roleId: role.roleId,
         roleVersion: role.version,
-        toolPolicy: role.toolPolicy.map(tp => ({
-          tool: {
-            toolId: tp.toolId,
-            ipfsCid: tp.toolIpfsCid
-          },
+        toolPolicy: role.toolPolicy.map((tp) => ({
           policy: {
-            policyId: tp.policyId,
             ipfsCid: tp.policyIpfsCid,
-            schema: tp.policyVarsSchema
-          }
-        }))
-      }
+            policyId: tp.policyId,
+            schema: tp.policyVarsSchema,
+          },
+          tool: {
+            ipfsCid: tp.toolIpfsCid,
+            toolId: tp.toolId,
+          },
+        })),
+      },
+      success: true,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
   }
 };
 
 const updateRoleSchema = z.object({
-  signedMessage: z.string(),
   appId: z.string(),
-  roleId: z.string(),
-  roleVersion: z.string(),
-  roleName: z.string(),
   roleDescription: z.string(),
-  toolPolicy: z.array(toolPolicySchema)
+  roleId: z.string(),
+  roleName: z.string(),
+  roleVersion: z.string(),
+  signedMessage: z.string(),
+  toolPolicy: z.array(toolPolicySchema),
 });
 
 export const updateRole = async (req: Request, res: Response) => {
   try {
-    const { signedMessage, appId, roleId, roleVersion, roleName, roleDescription, toolPolicy } = updateRoleSchema.parse(req.body);
+    const {
+      appId,
+      roleDescription,
+      roleId,
+      roleName,
+      roleVersion,
+      /* signedMessage, */ toolPolicy,
+    } = updateRoleSchema.parse(req.body);
 
     // Verify SIWE message and extract management wallet address
-    const { address: managementWallet } = await verifySIWEMessage(signedMessage);
+    const { address: managementWallet } = await verifySIWEMessage(/* signedMessage */);
 
     const app = await App.findOne({ appId, managementWallet });
     if (!app) {
-      return res.status(404).json({ success: false, message: 'App not found or unauthorized' });
+      res.status(404).json({ message: 'App not found or unauthorized', success: false });
+      return;
     }
 
     const role = await Role.findOne({ appId, roleId });
     if (!role) {
-      return res.status(404).json({ success: false, message: 'Role not found' });
+      res.status(404).json({ message: 'Role not found', success: false });
+      return;
     }
 
     role.name = roleName;
     role.description = roleDescription;
     role.version = roleVersion;
     role.lastUpdated = new Date();
-    role.toolPolicy = toolPolicy.map(tp => ({
-      toolId: uuidv4(),
-      toolIpfsCid: tp.toolIpfsCid,
+    role.toolPolicy = toolPolicy.map((tp) => ({
       policyId: uuidv4(),
       policyIpfsCid: tp.policyIpfsCid,
-      policyVarsSchema: tp.policyVarsSchema.map(pvs => ({
+      policyVarsSchema: tp.policyVarsSchema.map((pvs) => ({
+        defaultValue: pvs.defaultValue,
         paramId: uuidv4(),
         paramName: pvs.paramName,
-        valueType: pvs.valueType,
-        defaultValue: pvs.defaultValue // Ensure this is always present
-      }))
+        valueType: pvs.valueType, // Ensure this is always present
+      })),
+      toolId: uuidv4(),
+      toolIpfsCid: tp.toolIpfsCid,
     }));
 
     await role.save();
 
     res.json({
-      success: true,
       data: {
         appId,
         roleId,
-        roleVersion
-      }
+        roleVersion,
+      },
+      success: true,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ success: false, message: error.errors });
+      res.status(400).json({ message: error.errors, success: false });
+      return;
     }
-    res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
   }
 };

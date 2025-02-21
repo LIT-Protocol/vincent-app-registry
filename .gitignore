@@ -1,0 +1,15 @@
+dist
+/packages/**/dist
+node_modules
+
+# dotEnv files should not be committed
+.env*
+!.env.vault
+
+# IDE config
+/.idea
+/.vscode
+
+# System Files
+.DS_Store
+Thumbs.db
