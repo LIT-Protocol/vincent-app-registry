@@ -3,7 +3,6 @@
   "homepage": "https://github.com/LIT-Protocol/vincent-app-registry",
   "version": "0.0.10",
   "main": "index.js",
-  "type": "module",
   "packageManager": "pnpm@8.15.5",
   "scripts": {
     "start": "node dist/app.js",
@@ -11,6 +10,10 @@
     "build": "tsc",
     "lint": "eslint ./",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "^20.11.1",
+    "pnpm": "8.15.5"
   },
   "keywords": [],
   "author": "",
