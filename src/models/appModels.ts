@@ -3,68 +3,76 @@ import mongoose, { Document, Schema } from 'mongoose';
 // App Schema
 interface IApp extends Document {
   appId: string;
-  managementWallet: string;
-  name: string;
+  contactEmail: string;
   description: string;
   domain?: string;
   logo?: string;
-  contactEmail: string;
+  managementWallet: string;
+  name: string;
 }
 
-const AppSchema: Schema = new mongoose.Schema({
-  appId: { type: String, required: true, unique: true },
-  managementWallet: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-  domain: { type: String },
-  logo: { type: String },
-  contactEmail: { type: String, required: true }
-}, { timestamps: true });
+const AppSchema: Schema = new mongoose.Schema(
+  {
+    appId: { required: true, type: String, unique: true },
+    contactEmail: { required: true, type: String },
+    description: { required: true, type: String },
+    domain: { type: String },
+    logo: { type: String },
+    managementWallet: { required: true, type: String, unique: true },
+    name: { required: true, type: String },
+  },
+  { timestamps: true }
+);
 
 // Role Schema
 interface IRole extends Document {
-  roleId: string;
   appId: string;
-  name: string;
   description: string;
-  version: string;
   lastUpdated: Date;
+  name: string;
+  roleId: string;
   toolPolicy: Array<{
-    toolId: string;
-    toolIpfsCid: string;
     policyId: string;
     policyIpfsCid: string;
     policyVarsSchema: Array<{
+      defaultValue: any;
       paramId: string;
       paramName: string;
       valueType: string;
-      defaultValue: any;
     }>;
+    toolId: string;
+    toolIpfsCid: string;
   }>;
+  version: string;
 }
 
-const RoleSchema: Schema = new mongoose.Schema({
-  roleId: { type: String, required: true, unique: true },
-  appId: { type: String, required: true },
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-  version: { type: String, required: true },
-  lastUpdated: { type: Date, default: Date.now },
-  toolPolicy: [{
-    toolId: { type: String, required: true },
-    toolIpfsCid: { type: String, required: true },
-    policyId: { type: String, required: true },
-    policyIpfsCid: { type: String, required: true },
-    policyVarsSchema: [{
-      paramId: { type: String, required: true },
-      paramName: { type: String, required: true },
-      valueType: { type: String, required: true },
-      defaultValue: { type: Schema.Types.Mixed, required: true }
-    }]
-  }]
-}, { timestamps: true });
+const RoleSchema: Schema = new mongoose.Schema(
+  {
+    appId: { required: true, type: String },
+    description: { required: true, type: String },
+    lastUpdated: { default: Date.now, type: Date },
+    name: { required: true, type: String },
+    roleId: { required: true, type: String, unique: true },
+    toolPolicy: [
+      {
+        policyId: { required: true, type: String },
+        policyIpfsCid: { required: true, type: String },
+        policyVarsSchema: [
+          {
+            defaultValue: { required: true, type: Schema.Types.Mixed },
+            paramId: { required: true, type: String },
+            paramName: { required: true, type: String },
+            valueType: { required: true, type: String },
+          },
+        ],
+        toolId: { required: true, type: String },
+        toolIpfsCid: { required: true, type: String },
+      },
+    ],
+    version: { required: true, type: String },
+  },
+  { timestamps: true }
+);
 
 export const App = mongoose.model<IApp>('App', AppSchema);
 export const Role = mongoose.model<IRole>('Role', RoleSchema);
-
-// We no longer need separate Tool and Policy models as they are now embedded in the Role model
