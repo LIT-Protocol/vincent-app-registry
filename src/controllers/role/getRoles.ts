@@ -1,16 +1,29 @@
 import { Request, Response } from 'express';
-import { Role, RoleVersion } from '../../models/appModels';
+import { App, Role, RoleVersion, Tool, ToolVersion } from '../../models/appModels';
 
 export const getRoles = async (req: Request, res: Response) => {
   try {
     const { appId } = req.params;
 
+    // Find app first
+    const app = await App.findOne({ appId });
+    if (!app) {
+      return res.status(404).json({ message: 'App not found', success: false });
+    }
+
     // Find all roles for the app and populate their active versions
-    const roles = await Role.find({ app: appId })
+    const roles = await Role.find({ app: app._id.toString() })
       .populate({
         path: 'activeRoleVersion',
         model: RoleVersion,
-        select: 'version tools'
+        populate: {
+          path: 'tools',
+          model: Tool,
+          populate: {
+            path: 'activeToolVersion',
+            model: ToolVersion
+          }
+        }
       })
       .exec();
 
@@ -18,18 +31,17 @@ export const getRoles = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'No roles found for this app', success: false });
     }
 
-    const rolesData = roles.map(role => {
-      // Type assertion for populated role version
-      const roleVersion = role.activeRoleVersion as unknown as {
-        version: string;
+    const rolesData = roles.map((role: any) => {
+      // First cast to unknown, then to our expected type
+      const roleVersion = (role.activeRoleVersion as unknown) as {
+        version: number;
         tools: Array<{
-          toolId: string;
-          ipfsCid: string;
-          policy: {
-            policyId: string;
-            ipfsCid: string;
-            policyVarsSchema: Array<{
-              paramId: string;
+          _id: string;
+          activeToolVersion: {
+            _id: string;
+            toolIpfsCid: string;
+            policyIpfsCid: string;
+            policyParamsSchema: Array<{
               paramName: string;
               valueType: string;
               defaultValue: any;
@@ -43,16 +55,16 @@ export const getRoles = async (req: Request, res: Response) => {
         name: role.name,
         description: role.description,
         enabled: role.enabled,
-        roleVersion: roleVersion.version,
+        roleVersion: roleVersion.version.toString(),
         toolPolicy: roleVersion.tools.map(tool => ({
           tool: {
-            toolId: tool.toolId,
-            ipfsCid: tool.ipfsCid,
+            toolId: tool._id.toString(),
+            ipfsCid: tool.activeToolVersion.toolIpfsCid,
           },
           policy: {
-            policyId: tool.policy.policyId,
-            ipfsCid: tool.policy.ipfsCid,
-            schema: tool.policy.policyVarsSchema
+            policyId: tool.activeToolVersion._id.toString(),
+            ipfsCid: tool.activeToolVersion.policyIpfsCid,
+            schema: tool.activeToolVersion.policyParamsSchema
           }
         }))
       };

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { Types } from 'mongoose';
 import { App, registerAppSchema } from '../../models/appModels';
 import { verifySIWEMessage } from '../../utils/siwe';
 
@@ -10,9 +11,12 @@ export const registerApp = async (req: Request, res: Response) => {
     // Verify SIWE message and extract management address
     const { address: managementAddress } = await verifySIWEMessage(signedMessage);
 
+    // Generate a unique appId
+    const appId = new Types.ObjectId().toString();
+
     // Create new app with unique appId
     const app = new App({
-      appId: managementAddress.toLowerCase(), // Using management address as appId for uniqueness
+      appId,
       name: appName,
       description: appDescription,
       contactEmail: email,

@@ -5,7 +5,7 @@ import { appRouter } from './routes/appRoutes';
 
 const logger = consola.withTag('app init');
 
-const app = express();
+export const app = express();
 app.use(express.json());
 
 // Connect to MongoDB
@@ -16,7 +16,10 @@ mongoose.connect('mongodb://localhost:27017/vincent-app-registry')
 // Use routes
 app.use('/', appRouter);
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  logger.log(`Server is running on port ${port}`);
-}); 
+// Only start the server if this file is run directly
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    logger.log(`Server is running on port ${port}`);
+  });
+} 

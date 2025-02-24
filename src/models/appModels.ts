@@ -58,7 +58,7 @@ export const updateRoleSchema = z.object({
   roleDescription: z.string(),
   roleId: z.string(),
   roleName: z.string(),
-  roleVersion: z.string(),
+  roleVersion: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must be in format x.y.z'),
   signedMessage: siweMessageSchema,
   toolPolicy: z.array(toolPolicySchema),
 });
@@ -71,6 +71,7 @@ export interface IApp {
   domain?: string;
   lastUpdated: Date;
   logo?: string;
+  managementAddress: string;
   name: string;
 }
 
@@ -86,7 +87,7 @@ export interface IRole {
 export interface IRoleVersion {
   role: string; // ObjectId reference to Role
   tools: string[]; // Array of ObjectId references to Tool
-  version: number;
+  version: string; // Semantic version (e.g., "0.0.1")
 }
 
 export interface ITool {
@@ -126,6 +127,7 @@ const AppSchema = new Schema<IApp>({
   domain: { type: String },
   lastUpdated: { required: true, type: Date, default: Date.now },
   logo: { type: String },
+  managementAddress: { required: true, type: String },
   name: { required: true, type: String },
 }, {
   timestamps: true,
@@ -151,7 +153,7 @@ const RoleSchema = new Schema<IRole>({
 const RoleVersionSchema = new Schema<IRoleVersion>({
   role: { required: true, type: String, ref: 'Role' },
   tools: [{ required: true, type: String, ref: 'Tool' }],
-  version: { required: true, type: Number }
+  version: { required: true, type: String }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

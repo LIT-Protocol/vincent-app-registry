@@ -11,7 +11,7 @@ export const updateRole = async (req: Request, res: Response) => {
       roleDescription, 
       roleId, 
       roleName, 
-      roleVersion,
+      roleVersion: newVersion,
       signedMessage, 
       toolPolicy 
     } = updateRoleSchema.parse(req.body);
@@ -29,8 +29,11 @@ export const updateRole = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'App not found or unauthorized', success: false });
     }
 
-    // Find role
-    const role = await Role.findOne({ _id: roleId, app: app._id });
+    // Find role and populate current version
+    const role = await Role.findOne({ _id: roleId, app: app._id.toString() })
+      .populate('activeRoleVersion')
+      .exec();
+
     if (!role) {
       return res.status(404).json({ message: 'Role not found', success: false });
     }
@@ -73,7 +76,7 @@ export const updateRole = async (req: Request, res: Response) => {
     // Create new role version
     const newRoleVersion = new RoleVersion({
       role: role._id.toString(),
-      version: roleVersion,
+      version: newVersion,
       tools: toolRefs
     });
 
@@ -92,10 +95,10 @@ export const updateRole = async (req: Request, res: Response) => {
       data: {
         appId,
         roleId: role._id.toString(),
-        roleVersion
+        roleVersion: newVersion
       }
     });
-  } catch (error: unknown) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ message: error.errors, success: false });
       return;

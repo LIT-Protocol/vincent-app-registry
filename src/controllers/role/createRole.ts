@@ -68,7 +68,7 @@ export const createRole = async (req: Request, res: Response) => {
     // Create role version
     const roleVersion = new RoleVersion({
       role: role._id.toString(),
-      version: 1,
+      version: '0.0.1',
       tools: toolRefs
     });
 
@@ -83,7 +83,7 @@ export const createRole = async (req: Request, res: Response) => {
       success: true,
       data: {
         roleId: savedRole._id.toString(),
-        roleVersion: 1
+        roleVersion: '0.0.1'
       }
     });
   } catch (error: unknown) {

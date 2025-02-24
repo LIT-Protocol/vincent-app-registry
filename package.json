@@ -10,7 +10,9 @@
     "dev": "nodemon src/app.ts",
     "build": "tsc",
     "lint": "eslint ./",
-    "test": "npx @dotenvx/dotenvx run -- mocha test/**/*.spec.ts"
+    "test": "npx @dotenvx/dotenvx run -- mocha test/**/*.spec.ts",
+    "test:app": "npx @dotenvx/dotenvx run -- mocha test/app.spec.ts",
+    "test:api": "npx @dotenvx/dotenvx run -- mocha test/api.spec.ts"
   },
   "engines": {
     "node": "^22.9.0",
@@ -24,7 +26,7 @@
     "axios": "^1.7.9",
     "consola": "^3.4.0",
     "dotenv": "^16.4.7",
-    "ethers": "5.7.2",
+    "ethers": "5.5.1",
     "express": "^4.21.2",
     "mongoose": "^8.10.1",
     "siwe": "2.1.4",
@@ -39,6 +41,7 @@
     "@types/express": "^5.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.4",
+    "@types/supertest": "^6.0.2",
     "@types/uuid": "^10.0.0",
     "@types/verror": "^1.10.10",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
@@ -60,6 +63,7 @@
     "nodemon": "^3.1.9",
     "prettier": "^3.2.5",
     "prettier-plugin-jsdoc": "^1.3.0",
+    "supertest": "^7.0.0",
     "ts-node": "^10.9.2",
     "typescript": "5.5.4"
   }
