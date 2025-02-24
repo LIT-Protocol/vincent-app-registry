@@ -4,42 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 import { App, Role } from '../models/appModels';
-
-async function verifySIWEMessage(params: {
-  message: SiweMessage;
-  signature: string;
-}): Promise<{ address: string }> {
-  try {
-    const fields = {
-      domain:
-        process.env.DOMAIN ||
-        process.env.HEROKU_APP_DEFAULT_DOMAIN_NAME ||
-        `localhost:${process.env.PORT}`,
-      nonce: params.message.nonce,
-      signature: params.signature,
-      time: params.message.issuedAt,
-    };
-
-    // Verify using the static verify method of SiweMessage
-    const { success } = await params.message.verify(fields);
-
-    if (!success) {
-      throw new Error('Signature verification failed');
-    }
-
-    // Check expiration if present
-    if (params.message.expirationTime) {
-      const expirationTime = new Date(params.message.expirationTime);
-      if (expirationTime < new Date()) {
-        throw new Error('Message has expired');
-      }
-    }
-
-    return { address: params.message.address };
-  } catch (error) {
-    throw new Error('Invalid signature or message format');
-  }
-}
+import { verifySIWEMessage } from '../routes/siweVerification';
 
 // Define Zod schemas for input validation
 const registerAppSchema = z.object({
@@ -66,11 +31,18 @@ export const registerApp = async (req: Request, res: Response) => {
   try {
     const { contactEmail, description, name, signedMessage } = registerAppSchema.parse(req.body);
 
-    const siweMessage = new SiweMessage(signedMessage.message);
-    const { address: managementWallet } = await verifySIWEMessage({
-      message: siweMessage,
-      signature: signedMessage.signature,
-    });
+    let managementWallet: string;
+
+    try {
+      const siweMessage = new SiweMessage(signedMessage.message);
+      managementWallet = await verifySIWEMessage({
+        message: siweMessage,
+        signature: signedMessage.signature,
+      });
+    } catch (error) {
+      res.status(401).json({ message: (error as Error).message, success: false });
+      return;
+    }
 
     // Check if the management wallet is already registered
     const existingApp = await App.findOne({ managementWallet });
@@ -146,12 +118,18 @@ export const updateApp = async (req: Request, res: Response) => {
   try {
     const { contactEmail, description, name, signedMessage } = updateAppSchema.parse(req.body);
 
-    // Verify SIWE message and extract management wallet address
-    const siweMessage = new SiweMessage(signedMessage.message);
-    const { address: managementWallet } = await verifySIWEMessage({
-      message: siweMessage,
-      signature: signedMessage.signature,
-    });
+    let managementWallet: string;
+
+    try {
+      const siweMessage = new SiweMessage(signedMessage.message);
+      managementWallet = await verifySIWEMessage({
+        message: siweMessage,
+        signature: signedMessage.signature,
+      });
+    } catch (error) {
+      res.status(401).json({ message: (error as Error).message, success: false });
+      return;
+    }
 
     const app = await App.findOne({ managementWallet });
     if (!app) {
@@ -217,12 +195,18 @@ export const createRole = async (req: Request, res: Response) => {
       req.body
     );
 
-    // Verify SIWE message and extract management wallet address
-    const siweMessage = new SiweMessage(signedMessage.message);
-    const { address: managementWallet } = await verifySIWEMessage({
-      message: siweMessage,
-      signature: signedMessage.signature,
-    });
+    let managementWallet: string;
+
+    try {
+      const siweMessage = new SiweMessage(signedMessage.message);
+      managementWallet = await verifySIWEMessage({
+        message: siweMessage,
+        signature: signedMessage.signature,
+      });
+    } catch (error) {
+      res.status(401).json({ message: (error as Error).message, success: false });
+      return;
+    }
 
     const app = await App.findOne({ appId, managementWallet });
     if (!app) {
@@ -323,12 +307,18 @@ export const updateRole = async (req: Request, res: Response) => {
     const { appId, roleDescription, roleId, roleName, signedMessage, toolPolicy } =
       updateRoleSchema.parse(req.body);
 
-    // Verify SIWE message and extract management wallet address
-    const siweMessage = new SiweMessage(signedMessage.message);
-    const { address: managementWallet } = await verifySIWEMessage({
-      message: siweMessage,
-      signature: signedMessage.signature,
-    });
+    let managementWallet: string;
+
+    try {
+      const siweMessage = new SiweMessage(signedMessage.message);
+      managementWallet = await verifySIWEMessage({
+        message: siweMessage,
+        signature: signedMessage.signature,
+      });
+    } catch (error) {
+      res.status(401).json({ message: (error as Error).message, success: false });
+      return;
+    }
 
     const app = await App.findOne({ appId, managementWallet });
     if (!app) {
