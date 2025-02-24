@@ -8,6 +8,7 @@ import {
   createRole,
   getRole,
   updateRole,
+  getAllRoles
 } from '../controllers/appController';
 
 export const appRouter = Router();
@@ -40,3 +41,4 @@ appRouter.put('/updateApp', updateApp as RequestHandler);
 appRouter.post('/createRole', createRole as RequestHandler);
 appRouter.get('/role/:appId/:roleId', getRole as RequestHandler);
 appRouter.put('/updateRole', updateRole as RequestHandler);
+appRouter.get('/getAllRoles', getAllRoles as RequestHandler);
