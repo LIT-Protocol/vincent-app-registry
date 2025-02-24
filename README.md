@@ -15,5 +15,7 @@ The service requires a MongoDB instance to function, which is configured via env
 - Get a MongoDB instance to run the service against
 - Configure MongoDB connection details in `.env` file
 
+Once you have your environment configured, run `pnpm start`
+
 See [demo.txt](./demo.txt) contains example CURL commands that you can use to test the endpoints
 
