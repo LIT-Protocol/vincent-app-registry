@@ -1,26 +1,22 @@
-import consola from 'consola';
-import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
-
+import consola from 'consola';
 import { appRouter } from './routes/appRoutes';
 
 const logger = consola.withTag('app init');
 
-dotenv.config();
 const app = express();
 app.use(express.json());
-app.use('/api/v1', appRouter);
 
-const PORT = process.env.PORT || 3000;
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/vincent-app-registry')
+  .then(() => logger.log('Connected to MongoDB'))
+  .catch((error) => logger.error('Failed to connect to MongoDB:', error));
 
-mongoose
-  .connect(process.env.MONGODB_URI as string)
-  .then(() => {
-    logger.log('Connected to MongoDB');
+// Use routes
+app.use('/', appRouter);
 
-    app.listen(PORT, () => {
-      logger.log(`Server is running on port ${PORT}`);
-    });
-  })
-  .catch((err) => logger.error('MongoDB connection error:', err));
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  logger.log(`Server is running on port ${port}`);
+}); 
