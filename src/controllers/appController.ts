@@ -405,3 +405,68 @@ export const updateRole = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const getAllRoles = async (req: Request, res: Response) => {
+  try {
+    // Define schema for query parameter validation
+    const getAllRolesSchema = z.object({
+      appId: z.string(),
+    });
+
+    // Parse and validate query parameters
+    const { appId } = getAllRolesSchema.parse(req.query);
+
+    // Find the app to ensure it exists
+    const app = await App.findOne({ appId });
+    if (!app) {
+      res.status(404).json({ message: 'App not found', success: false });
+      return;
+    }
+
+    // Fetch all roles for the given appId
+    const roles = await Role.find({ appId });
+
+    // If no roles exist, return empty array
+    if (!roles || roles.length === 0) {
+      res.json({
+        data: [],
+        success: true,
+      });
+      return;
+    }
+
+    // Format the response with role details
+    const rolesData = roles.map(role => ({
+      roleId: role.roleId,
+      roleName: role.name,
+      roleDescription: role.description,
+      lastUpdated: role.lastUpdated,
+      version: role.version,
+      toolPolicy: role.toolPolicy.map(tp => ({
+        policy: {
+          ipfsCid: tp.policyIpfsCid,
+          policyId: tp.policyId,
+          schema: tp.policyVarsSchema,
+        },
+        tool: {
+          ipfsCid: tp.toolIpfsCid,
+          toolId: tp.toolId,
+        },
+      })),
+    }));
+
+    res.json({
+      data: rolesData,
+      success: true,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ message: error.errors, success: false });
+      return;
+    }
+    res.status(500).json({
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
+  }
+};
