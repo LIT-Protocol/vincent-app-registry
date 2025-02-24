@@ -81,4 +81,11 @@ curl -X PUT http://localhost:3000/api/v1/updateRole \
 
 Get the updated role again to confirm changes (replace APP_ID and ROLE_ID with the IDs from steps 1 and 4):
 
-bashCopycurl http://localhost:3000/api/v1/role/APP_ID/ROLE_ID
+```bash
+curl http://localhost:3000/api/v1/role/APP_ID/ROLE_ID
+```
+
+Get all Roles
+```bash
+curl "http://localhost:3000/api/v1/getAllRoles?appId=APP_ID"
+```
