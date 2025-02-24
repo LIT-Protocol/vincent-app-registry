@@ -19,7 +19,6 @@ curl -X PUT http://localhost:3000/api/v1/updateApp \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
-  "appId": "APP_ID",
   "name": "Updated Demo App",
   "description": "This is an updated demonstration application",
   "contactEmail": "updated_demo@example.com"

@@ -169,7 +169,6 @@ const toolPolicySchema = z.object({
 });
 
 const createRoleSchema = z.object({
-  appId: z.string(),
   roleDescription: z.string(),
   roleName: z.string(),
   signedMessage: z.object({
@@ -191,7 +190,7 @@ const createRoleSchema = z.object({
 
 export const createRole = async (req: Request, res: Response) => {
   try {
-    const { appId, roleDescription, roleName, signedMessage, toolPolicy } = createRoleSchema.parse(
+    const { roleDescription, roleName, signedMessage, toolPolicy } = createRoleSchema.parse(
       req.body
     );
 
@@ -208,7 +207,7 @@ export const createRole = async (req: Request, res: Response) => {
       return;
     }
 
-    const app = await App.findOne({ appId, managementWallet });
+    const app = await App.findOne({ managementWallet });
     if (!app) {
       res.status(404).json({ message: 'App not found or unauthorized', success: false });
       return;
@@ -216,7 +215,6 @@ export const createRole = async (req: Request, res: Response) => {
 
     const roleId = uuidv4();
     const newRole = new Role({
-      appId,
       roleId,
       description: roleDescription,
       lastUpdated: new Date(),
@@ -254,8 +252,8 @@ export const createRole = async (req: Request, res: Response) => {
 
 export const getRole = async (req: Request, res: Response) => {
   try {
-    const { appId, roleId } = req.params;
-    const role = await Role.findOne({ appId, roleId });
+    const { managementWallet, roleId } = req.params;
+    const role = await Role.findOne({ managementWallet, roleId });
 
     if (!role) {
       res.status(404).json({ message: 'Role not found', success: false });
@@ -281,7 +279,6 @@ export const getRole = async (req: Request, res: Response) => {
 };
 
 const updateRoleSchema = z.object({
-  appId: z.string(),
   roleDescription: z.string(),
   roleId: z.string(),
   roleName: z.string(),
@@ -304,8 +301,9 @@ const updateRoleSchema = z.object({
 
 export const updateRole = async (req: Request, res: Response) => {
   try {
-    const { appId, roleDescription, roleId, roleName, signedMessage, toolPolicy } =
-      updateRoleSchema.parse(req.body);
+    const { roleDescription, roleId, roleName, signedMessage, toolPolicy } = updateRoleSchema.parse(
+      req.body
+    );
 
     let managementWallet: string;
 
@@ -320,13 +318,13 @@ export const updateRole = async (req: Request, res: Response) => {
       return;
     }
 
-    const app = await App.findOne({ appId, managementWallet });
+    const app = await App.findOne({ managementWallet });
     if (!app) {
       res.status(404).json({ message: 'App not found or unauthorized', success: false });
       return;
     }
 
-    const role = await Role.findOne({ appId, roleId });
+    const role = await Role.findOne({ managementWallet, roleId });
     if (!role) {
       res.status(404).json({ message: 'Role not found', success: false });
       return;
@@ -363,25 +361,25 @@ export const updateRole = async (req: Request, res: Response) => {
   }
 };
 
+// Define schema for query parameter validation
+const getAllRolesSchema = z.object({
+  managementWallet: z.string(),
+});
+
 export const getAllRoles = async (req: Request, res: Response) => {
   try {
-    // Define schema for query parameter validation
-    const getAllRolesSchema = z.object({
-      appId: z.string(),
-    });
-
     // Parse and validate query parameters
-    const { appId } = getAllRolesSchema.parse(req.query);
+    const { managementWallet } = getAllRolesSchema.parse(req.query);
 
     // Find the app to ensure it exists
-    const app = await App.findOne({ appId });
+    const app = await App.findOne({ managementWallet });
     if (!app) {
       res.status(404).json({ message: 'App not found', success: false });
       return;
     }
 
     // Fetch all roles for the given appId
-    const roles = await Role.find({ appId });
+    const roles = await Role.find({ managementWallet });
 
     // If no roles exist, return empty array
     if (!roles || roles.length === 0) {

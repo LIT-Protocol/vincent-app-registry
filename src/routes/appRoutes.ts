@@ -40,9 +40,9 @@ appRouter.use(cors(corsOptions));
 
 // Use the RequestHandler type to cast each controller function
 appRouter.post('/registerApp', registerApp);
-appRouter.get('/appMetadata/:appId', getAppMetadata);
+appRouter.get('/appMetadata/:managementWallet', getAppMetadata);
 appRouter.put('/updateApp', updateApp);
 appRouter.post('/createRole', createRole);
-appRouter.get('/role/:appId/:roleId', getRole);
+appRouter.get('/role/:managementWallet/:roleId', getRole);
 appRouter.put('/updateRole', updateRole);
 appRouter.get('/getAllRoles', getAllRoles);
