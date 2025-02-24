@@ -1,54 +1,83 @@
 import { Request, Response } from 'express';
+import { SiweMessage } from 'siwe';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 import { App, Role } from '../models/appModels';
 
-// Utility function to generate unique IDs
 const generateUniqueId = () => uuidv4();
-/*
-import { SiweMessage } from 'siwe';
 
-const verifySIWEMessage = async (signedMessage: string): Promise<{ address: string }> => {
+async function verifySIWEMessage(params: {
+  message: SiweMessage;
+  signature: string;
+}): Promise<{ address: string }> {
   try {
-    const siweMessage = new SiweMessage(signedMessage);
-    const fields = await siweMessage.validate();
-    return { address: fields.address };
+    
+    const fields = {
+      domain: process.env.DOMAIN || 'localhost:3000',
+      nonce: params.message.nonce,
+      signature: params.signature,
+      time: params.message.issuedAt,
+    };
+
+    // Verify using the static verify method of SiweMessage
+    const { success } = await params.message.verify(fields);
+
+    if (!success) {
+      throw new Error('Signature verification failed');
+    }
+
+    // Check expiration if present
+    if (params.message.expirationTime) {
+      const expirationTime = new Date(params.message.expirationTime);
+      if (expirationTime < new Date()) {
+        throw new Error('Message has expired');
+      }
+    }
+
+    return { address: params.message.address };
   } catch (error) {
-    console.error('SIWE verification failed:', error);
-    throw new Error('Invalid signature');
+    throw new Error('Invalid signature or message format');
   }
-};
-*/
-// Utility function to verify SIWE message (placeholder)
-const verifySIWEMessage = async (/* _signedMessage: string */): Promise<{ address: string }> =>
-  // Implement SIWE verification logic here
-  // For now, we'll just return a dummy address
-  ({ address: '0x1234567890123456789012345678901234567890' });
+}
+
 // Define Zod schemas for input validation
 const registerAppSchema = z.object({
   appDescription: z.string(),
   appName: z.string(),
   email: z.string().email(),
-  signedMessage: z.string(),
+  signedMessage: z.object({
+    message: z.object({
+      address: z.string(),
+      chainId: z.number(),
+      domain: z.string(),
+      expirationTime: z.string().optional(),
+      issuedAt: z.string(),
+      nonce: z.string(),
+      statement: z.string(),
+      uri: z.string(),
+      version: z.string(),
+    }),
+    signature: z.string(),
+  }),
 });
 
 export const registerApp = async (req: Request, res: Response) => {
   try {
-    const { appDescription, appName, email /* , signedMessage */ } = registerAppSchema.parse(
-      req.body
-    );
+    const { appDescription, appName, email, signedMessage } = registerAppSchema.parse(req.body);
 
-    // Verify SIWE message and extract management wallet address
-    const { address: managementWallet } = await verifySIWEMessage(/* signedMessage */);
+    const siweMessage = new SiweMessage(signedMessage.message);
+    const { address: managementWallet } = await verifySIWEMessage({
+      message: siweMessage,
+      signature: signedMessage.signature
+    });
 
     // Check if the management wallet is already registered
     const existingApp = await App.findOne({ managementWallet });
     if (existingApp) {
-      res.status(400).json({ message: 'Management wallet already registered', success: false });
+      res.status(200).json({ message: 'Management wallet already registered', success: true });
       return;
     }
-
     const appId = generateUniqueId();
     const newApp = new App({
       appId,
@@ -104,17 +133,34 @@ const updateAppSchema = z.object({
   appId: z.string(),
   appName: z.string(),
   email: z.string().email(),
-  signedMessage: z.string(),
+  signedMessage: z.object({
+    message: z.object({
+      address: z.string(),
+      chainId: z.number(),
+      domain: z.string(),
+      expirationTime: z.string().optional(),
+      issuedAt: z.string(),
+      nonce: z.string(),
+      statement: z.string(),
+      uri: z.string(),
+      version: z.string(),
+    }),
+    signature: z.string(),
+  }),
 });
 
 export const updateApp = async (req: Request, res: Response) => {
   try {
-    const { appDescription, appId, appName, email /* , signedMessage */ } = updateAppSchema.parse(
+    const { appDescription, appId, appName, email, signedMessage } = updateAppSchema.parse(
       req.body
     );
 
     // Verify SIWE message and extract management wallet address
-    const { address: managementWallet } = await verifySIWEMessage(/* signedMessage */);
+    const siweMessage = new SiweMessage(signedMessage.message);
+    const { address: managementWallet } = await verifySIWEMessage({
+      message: siweMessage,
+      signature: signedMessage.signature
+    });
 
     const app = await App.findOne({ appId, managementWallet });
     if (!app) {
@@ -157,17 +203,35 @@ const createRoleSchema = z.object({
   appId: z.string(),
   roleDescription: z.string(),
   roleName: z.string(),
-  signedMessage: z.string(),
+  signedMessage: z.object({
+    message: z.object({
+      address: z.string(),
+      chainId: z.number(),
+      domain: z.string(),
+      expirationTime: z.string().optional(),
+      issuedAt: z.string(),
+      nonce: z.string(),
+      statement: z.string(),
+      uri: z.string(),
+      version: z.string(),
+    }),
+    signature: z.string(),
+  }),
   toolPolicy: z.array(toolPolicySchema),
 });
 
 export const createRole = async (req: Request, res: Response) => {
   try {
-    const { appId, roleDescription, roleName, /* signedMessage, */ toolPolicy } =
-      createRoleSchema.parse(req.body);
+    const { appId, roleDescription, roleName, signedMessage, toolPolicy } = createRoleSchema.parse(
+      req.body
+    );
 
     // Verify SIWE message and extract management wallet address
-    const { address: managementWallet } = await verifySIWEMessage(/* signedMessage */);
+    const siweMessage = new SiweMessage(signedMessage.message);
+    const { address: managementWallet } = await verifySIWEMessage({
+      message: siweMessage,
+      signature: signedMessage.signature
+    });
 
     const app = await App.findOne({ appId, managementWallet });
     if (!app) {
@@ -262,23 +326,34 @@ const updateRoleSchema = z.object({
   roleId: z.string(),
   roleName: z.string(),
   roleVersion: z.string(),
-  signedMessage: z.string(),
+  signedMessage: z.object({
+    message: z.object({
+      address: z.string(),
+      chainId: z.number(),
+      domain: z.string(),
+      expirationTime: z.string().optional(),
+      issuedAt: z.string(),
+      nonce: z.string(),
+      statement: z.string(),
+      uri: z.string(),
+      version: z.string(),
+    }),
+    signature: z.string(),
+  }),
   toolPolicy: z.array(toolPolicySchema),
 });
 
 export const updateRole = async (req: Request, res: Response) => {
   try {
-    const {
-      appId,
-      roleDescription,
-      roleId,
-      roleName,
-      roleVersion,
-      /* signedMessage, */ toolPolicy,
-    } = updateRoleSchema.parse(req.body);
+    const { appId, roleDescription, roleId, roleName, roleVersion, signedMessage, toolPolicy } =
+      updateRoleSchema.parse(req.body);
 
     // Verify SIWE message and extract management wallet address
-    const { address: managementWallet } = await verifySIWEMessage(/* signedMessage */);
+    const siweMessage = new SiweMessage(signedMessage.message);
+    const { address: managementWallet } = await verifySIWEMessage({
+      message: siweMessage,
+      signature: signedMessage.signature
+    });
 
     const app = await App.findOne({ appId, managementWallet });
     if (!app) {
