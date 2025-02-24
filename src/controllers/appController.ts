@@ -5,16 +5,16 @@ import { z } from 'zod';
 
 import { App, Role } from '../models/appModels';
 
-const generateUniqueId = () => uuidv4();
-
 async function verifySIWEMessage(params: {
   message: SiweMessage;
   signature: string;
 }): Promise<{ address: string }> {
   try {
-    
     const fields = {
-      domain: process.env.DOMAIN || 'localhost:3000',
+      domain:
+        process.env.DOMAIN ||
+        process.env.HEROKU_APP_DEFAULT_DOMAIN_NAME ||
+        `localhost:${process.env.PORT}`,
       nonce: params.message.nonce,
       signature: params.signature,
       time: params.message.issuedAt,
@@ -43,9 +43,9 @@ async function verifySIWEMessage(params: {
 
 // Define Zod schemas for input validation
 const registerAppSchema = z.object({
-  appDescription: z.string(),
-  appName: z.string(),
-  email: z.string().email(),
+  contactEmail: z.string().email(),
+  description: z.string(),
+  name: z.string(),
   signedMessage: z.object({
     message: z.object({
       address: z.string(),
@@ -64,12 +64,12 @@ const registerAppSchema = z.object({
 
 export const registerApp = async (req: Request, res: Response) => {
   try {
-    const { appDescription, appName, email, signedMessage } = registerAppSchema.parse(req.body);
+    const { contactEmail, description, name, signedMessage } = registerAppSchema.parse(req.body);
 
     const siweMessage = new SiweMessage(signedMessage.message);
     const { address: managementWallet } = await verifySIWEMessage({
       message: siweMessage,
-      signature: signedMessage.signature
+      signature: signedMessage.signature,
     });
 
     // Check if the management wallet is already registered
@@ -78,18 +78,16 @@ export const registerApp = async (req: Request, res: Response) => {
       res.status(200).json({ message: 'Management wallet already registered', success: true });
       return;
     }
-    const appId = generateUniqueId();
     const newApp = new App({
-      appId,
+      contactEmail,
+      description,
       managementWallet,
-      contactEmail: email,
-      description: appDescription,
-      name: appName,
+      name,
     });
 
     await newApp.save();
 
-    res.json({ data: { appId, appName }, success: true });
+    res.json({ data: { app: newApp.toObject() }, success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ message: error.errors, success: false });
@@ -104,8 +102,8 @@ export const registerApp = async (req: Request, res: Response) => {
 
 export const getAppMetadata = async (req: Request, res: Response) => {
   try {
-    const { appId } = req.params;
-    const app = await App.findOne({ appId });
+    const { managementWallet } = req.params;
+    const app = await App.findOne({ managementWallet });
 
     if (!app) {
       res.status(404).json({ message: 'App not found', success: false });
@@ -113,11 +111,7 @@ export const getAppMetadata = async (req: Request, res: Response) => {
     }
 
     res.json({
-      data: {
-        appId: app.appId,
-        appName: app.name,
-        logo: app.logo,
-      },
+      data: app,
       success: true,
     });
   } catch (error) {
@@ -129,10 +123,9 @@ export const getAppMetadata = async (req: Request, res: Response) => {
 };
 
 const updateAppSchema = z.object({
-  appDescription: z.string(),
-  appId: z.string(),
-  appName: z.string(),
-  email: z.string().email(),
+  contactEmail: z.string().email(),
+  description: z.string(),
+  name: z.string(),
   signedMessage: z.object({
     message: z.object({
       address: z.string(),
@@ -151,30 +144,28 @@ const updateAppSchema = z.object({
 
 export const updateApp = async (req: Request, res: Response) => {
   try {
-    const { appDescription, appId, appName, email, signedMessage } = updateAppSchema.parse(
-      req.body
-    );
+    const { contactEmail, description, name, signedMessage } = updateAppSchema.parse(req.body);
 
     // Verify SIWE message and extract management wallet address
     const siweMessage = new SiweMessage(signedMessage.message);
     const { address: managementWallet } = await verifySIWEMessage({
       message: siweMessage,
-      signature: signedMessage.signature
+      signature: signedMessage.signature,
     });
 
-    const app = await App.findOne({ appId, managementWallet });
+    const app = await App.findOne({ managementWallet });
     if (!app) {
       res.status(404).json({ message: 'App not found or unauthorized', success: false });
       return;
     }
 
-    app.name = appName;
-    app.description = appDescription;
-    app.contactEmail = email;
+    app.name = name;
+    app.description = description;
+    app.contactEmail = contactEmail;
 
     await app.save();
 
-    res.json({ data: { appId }, success: true });
+    res.json({ data: { app: app.toObject() }, success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ message: error.errors, success: false });
@@ -188,7 +179,7 @@ export const updateApp = async (req: Request, res: Response) => {
 };
 
 const toolPolicySchema = z.object({
-  policyIpfsCid: z.string(),
+  description: z.string().optional(),
   policyVarsSchema: z.array(
     z.object({
       defaultValue: z.any(),
@@ -230,7 +221,7 @@ export const createRole = async (req: Request, res: Response) => {
     const siweMessage = new SiweMessage(signedMessage.message);
     const { address: managementWallet } = await verifySIWEMessage({
       message: siweMessage,
-      signature: signedMessage.signature
+      signature: signedMessage.signature,
     });
 
     const app = await App.findOne({ appId, managementWallet });
@@ -247,15 +238,11 @@ export const createRole = async (req: Request, res: Response) => {
       lastUpdated: new Date(),
       name: roleName,
       toolPolicy: toolPolicy.map((tp) => ({
-        policyId: uuidv4(),
-        policyIpfsCid: tp.policyIpfsCid,
         policyVarsSchema: tp.policyVarsSchema.map((pvs) => ({
           defaultValue: pvs.defaultValue,
-          paramId: uuidv4(),
           paramName: pvs.paramName,
           valueType: pvs.valueType, // Ensure this is always present
         })),
-        toolId: uuidv4(),
         toolIpfsCid: tp.toolIpfsCid,
       })),
       version: 'init',
@@ -265,10 +252,7 @@ export const createRole = async (req: Request, res: Response) => {
 
     res.json({
       data: {
-        appId,
-        roleId,
-        lastUpdated: newRole.lastUpdated,
-        roleVersion: 'init',
+        role: newRole.toObject(),
       },
       success: true,
     });
@@ -297,17 +281,9 @@ export const getRole = async (req: Request, res: Response) => {
     res.json({
       data: {
         roleId: role.roleId,
-        roleVersion: role.version,
         toolPolicy: role.toolPolicy.map((tp) => ({
-          policy: {
-            ipfsCid: tp.policyIpfsCid,
-            policyId: tp.policyId,
-            schema: tp.policyVarsSchema,
-          },
-          tool: {
-            ipfsCid: tp.toolIpfsCid,
-            toolId: tp.toolId,
-          },
+          policyVarsSchema: tp.policyVarsSchema,
+          toolIpfsCid: tp.toolIpfsCid,
         })),
       },
       success: true,
@@ -325,7 +301,6 @@ const updateRoleSchema = z.object({
   roleDescription: z.string(),
   roleId: z.string(),
   roleName: z.string(),
-  roleVersion: z.string(),
   signedMessage: z.object({
     message: z.object({
       address: z.string(),
@@ -345,14 +320,14 @@ const updateRoleSchema = z.object({
 
 export const updateRole = async (req: Request, res: Response) => {
   try {
-    const { appId, roleDescription, roleId, roleName, roleVersion, signedMessage, toolPolicy } =
+    const { appId, roleDescription, roleId, roleName, signedMessage, toolPolicy } =
       updateRoleSchema.parse(req.body);
 
     // Verify SIWE message and extract management wallet address
     const siweMessage = new SiweMessage(signedMessage.message);
     const { address: managementWallet } = await verifySIWEMessage({
       message: siweMessage,
-      signature: signedMessage.signature
+      signature: signedMessage.signature,
     });
 
     const app = await App.findOne({ appId, managementWallet });
@@ -369,29 +344,21 @@ export const updateRole = async (req: Request, res: Response) => {
 
     role.name = roleName;
     role.description = roleDescription;
-    role.version = roleVersion;
     role.lastUpdated = new Date();
     role.toolPolicy = toolPolicy.map((tp) => ({
       policyId: uuidv4(),
-      policyIpfsCid: tp.policyIpfsCid,
       policyVarsSchema: tp.policyVarsSchema.map((pvs) => ({
         defaultValue: pvs.defaultValue,
-        paramId: uuidv4(),
         paramName: pvs.paramName,
         valueType: pvs.valueType, // Ensure this is always present
       })),
-      toolId: uuidv4(),
       toolIpfsCid: tp.toolIpfsCid,
     }));
 
     await role.save();
 
     res.json({
-      data: {
-        appId,
-        roleId,
-        roleVersion,
-      },
+      data: { role: role.toObject() },
       success: true,
     });
   } catch (error) {
@@ -436,23 +403,16 @@ export const getAllRoles = async (req: Request, res: Response) => {
     }
 
     // Format the response with role details
-    const rolesData = roles.map(role => ({
+    const rolesData = roles.map((role) => ({
+      lastUpdated: role.lastUpdated,
+      roleDescription: role.description,
       roleId: role.roleId,
       roleName: role.name,
-      roleDescription: role.description,
-      lastUpdated: role.lastUpdated,
-      version: role.version,
-      toolPolicy: role.toolPolicy.map(tp => ({
-        policy: {
-          ipfsCid: tp.policyIpfsCid,
-          policyId: tp.policyId,
-          schema: tp.policyVarsSchema,
-        },
-        tool: {
-          ipfsCid: tp.toolIpfsCid,
-          toolId: tp.toolId,
-        },
+      toolPolicy: role.toolPolicy.map((tp) => ({
+        policyVarsSchema: tp.policyVarsSchema,
+        toolIpfsCid: tp.toolIpfsCid,
       })),
+      version: role.version,
     }));
 
     res.json({
