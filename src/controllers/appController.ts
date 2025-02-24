@@ -160,7 +160,7 @@ const toolPolicySchema = z.object({
   description: z.string().optional(),
   policyVarsSchema: z.array(
     z.object({
-      defaultValue: z.any(),
+      defaultValue: z.string(),
       paramName: z.string(),
       valueType: z.string(),
     })
@@ -169,8 +169,8 @@ const toolPolicySchema = z.object({
 });
 
 const createRoleSchema = z.object({
-  roleDescription: z.string(),
-  roleName: z.string(),
+  description: z.string(),
+  name: z.string(),
   signedMessage: z.object({
     message: z.object({
       address: z.string(),
@@ -190,9 +190,7 @@ const createRoleSchema = z.object({
 
 export const createRole = async (req: Request, res: Response) => {
   try {
-    const { roleDescription, roleName, signedMessage, toolPolicy } = createRoleSchema.parse(
-      req.body
-    );
+    const { description, name, signedMessage, toolPolicy } = createRoleSchema.parse(req.body);
 
     let managementWallet: string;
 
@@ -215,10 +213,10 @@ export const createRole = async (req: Request, res: Response) => {
 
     const roleId = uuidv4();
     const newRole = new Role({
+      description,
+      name,
       roleId,
-      description: roleDescription,
       lastUpdated: new Date(),
-      name: roleName,
       toolPolicy: toolPolicy.map((tp) => ({
         policyVarsSchema: tp.policyVarsSchema.map((pvs) => ({
           defaultValue: pvs.defaultValue,
@@ -227,7 +225,6 @@ export const createRole = async (req: Request, res: Response) => {
         })),
         toolIpfsCid: tp.toolIpfsCid,
       })),
-      version: 'init',
     });
 
     await newRole.save();
@@ -279,9 +276,9 @@ export const getRole = async (req: Request, res: Response) => {
 };
 
 const updateRoleSchema = z.object({
-  roleDescription: z.string(),
+  description: z.string(),
+  name: z.string(),
   roleId: z.string(),
-  roleName: z.string(),
   signedMessage: z.object({
     message: z.object({
       address: z.string(),
@@ -301,7 +298,7 @@ const updateRoleSchema = z.object({
 
 export const updateRole = async (req: Request, res: Response) => {
   try {
-    const { roleDescription, roleId, roleName, signedMessage, toolPolicy } = updateRoleSchema.parse(
+    const { description, name, roleId, signedMessage, toolPolicy } = updateRoleSchema.parse(
       req.body
     );
 
@@ -330,18 +327,10 @@ export const updateRole = async (req: Request, res: Response) => {
       return;
     }
 
-    role.name = roleName;
-    role.description = roleDescription;
+    role.name = name;
+    role.description = description;
     role.lastUpdated = new Date();
-    role.toolPolicy = toolPolicy.map((tp) => ({
-      policyId: uuidv4(),
-      policyVarsSchema: tp.policyVarsSchema.map((pvs) => ({
-        defaultValue: pvs.defaultValue,
-        paramName: pvs.paramName,
-        valueType: pvs.valueType, // Ensure this is always present
-      })),
-      toolIpfsCid: tp.toolIpfsCid,
-    }));
+    role.toolPolicy = toolPolicy;
 
     await role.save();
 
@@ -390,21 +379,8 @@ export const getAllRoles = async (req: Request, res: Response) => {
       return;
     }
 
-    // Format the response with role details
-    const rolesData = roles.map((role) => ({
-      lastUpdated: role.lastUpdated,
-      roleDescription: role.description,
-      roleId: role.roleId,
-      roleName: role.name,
-      toolPolicy: role.toolPolicy.map((tp) => ({
-        policyVarsSchema: tp.policyVarsSchema,
-        toolIpfsCid: tp.toolIpfsCid,
-      })),
-      version: role.version,
-    }));
-
     res.json({
-      data: rolesData,
+      data: { roles: roles.map((role) => role.toObject()) },
       success: true,
     });
   } catch (error) {

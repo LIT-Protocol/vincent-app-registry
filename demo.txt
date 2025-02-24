@@ -30,8 +30,8 @@ curl -X POST http://localhost:3000/api/v1/createRole \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
-  "roleName": "Demo Role",
-  "roleDescription": "This is a demonstration role",
+  "name": "Demo Role",
+  "description": "This is a demonstration role",
   "toolPolicy": [
     {
       "toolIpfsCid": "ipfs://demo_tool_cid",
@@ -57,8 +57,8 @@ curl -X PUT http://localhost:3000/api/v1/updateRole \
 -d '{
   "signedMessage": "dummy_signed_message",
   "roleId": "ROLE_ID",
-  "roleName": "Updated Demo Role",
-  "roleDescription": "This is an updated demonstration role",
+  "name": "Updated Demo Role",
+  "description": "This is an updated demonstration role",
   "toolPolicy": [
     {
       "toolIpfsCid": "ipfs://updated_demo_tool_cid",

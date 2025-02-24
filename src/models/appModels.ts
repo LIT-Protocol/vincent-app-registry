@@ -38,7 +38,6 @@ interface IRole extends Document {
     }>;
     toolIpfsCid: string;
   }>;
-  version: string;
 }
 
 const RoleSchema: Schema = new mongoose.Schema(
@@ -62,7 +61,6 @@ const RoleSchema: Schema = new mongoose.Schema(
         toolIpfsCid: { required: true, type: String },
       },
     ],
-    version: { required: true, type: String },
   },
   { timestamps: true }
 );
