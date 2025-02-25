@@ -4,9 +4,9 @@ curl -X POST http://localhost:3000/api/v1/registerApp \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
-  "appName": "Demo App",
-  "appDescription": "This is a demonstration application",
-  "email": "demo@example.com"
+  "name": "Demo App",
+  "description": "This is a demonstration application",
+  "contactEmail": "demo@example.com"
 }'
 
 Get the app metadata (replace APP_ID with the ID received from step 1):
@@ -19,10 +19,9 @@ curl -X PUT http://localhost:3000/api/v1/updateApp \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
-  "appId": "APP_ID",
-  "appName": "Updated Demo App",
-  "appDescription": "This is an updated demonstration application",
-  "email": "updated_demo@example.com"
+  "name": "Updated Demo App",
+  "description": "This is an updated demonstration application",
+  "contactEmail": "updated_demo@example.com"
 }'
 
 Create a new role for the app (replace APP_ID with the ID from step 1):
@@ -31,13 +30,11 @@ curl -X POST http://localhost:3000/api/v1/createRole \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
-  "appId": "APP_ID",
-  "roleName": "Demo Role",
-  "roleDescription": "This is a demonstration role",
+  "name": "Demo Role",
+  "description": "This is a demonstration role",
   "toolPolicy": [
     {
       "toolIpfsCid": "ipfs://demo_tool_cid",
-      "policyIpfsCid": "ipfs://demo_policy_cid",
       "policyVarsSchema": [
         {
           "paramName": "demoParam",
@@ -59,15 +56,12 @@ curl -X PUT http://localhost:3000/api/v1/updateRole \
 -H "Content-Type: application/json" \
 -d '{
   "signedMessage": "dummy_signed_message",
-  "appId": "APP_ID",
   "roleId": "ROLE_ID",
-  "roleVersion": "v1.1",
-  "roleName": "Updated Demo Role",
-  "roleDescription": "This is an updated demonstration role",
+  "name": "Updated Demo Role",
+  "description": "This is an updated demonstration role",
   "toolPolicy": [
     {
       "toolIpfsCid": "ipfs://updated_demo_tool_cid",
-      "policyIpfsCid": "ipfs://updated_demo_policy_cid",
       "policyVarsSchema": [
         {
           "paramName": "updatedDemoParam",

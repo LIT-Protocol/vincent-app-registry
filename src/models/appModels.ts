@@ -2,7 +2,6 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 // App Schema
 interface IApp extends Document {
-  appId: string;
   contactEmail: string;
   description: string;
   domain?: string;
@@ -13,7 +12,6 @@ interface IApp extends Document {
 
 const AppSchema: Schema = new mongoose.Schema(
   {
-    appId: { required: true, type: String, unique: true },
     contactEmail: { required: true, type: String },
     description: { required: true, type: String },
     domain: { type: String },
@@ -26,50 +24,43 @@ const AppSchema: Schema = new mongoose.Schema(
 
 // Role Schema
 interface IRole extends Document {
-  appId: string;
   description: string;
   lastUpdated: Date;
+  managementWallet: string;
   name: string;
   roleId: string;
   toolPolicy: Array<{
-    policyId: string;
-    policyIpfsCid: string;
+    description?: string;
     policyVarsSchema: Array<{
       defaultValue: any;
-      paramId: string;
       paramName: string;
       valueType: string;
     }>;
-    toolId: string;
     toolIpfsCid: string;
   }>;
-  version: string;
 }
 
 const RoleSchema: Schema = new mongoose.Schema(
   {
-    appId: { required: true, type: String },
     description: { required: true, type: String },
     lastUpdated: { default: Date.now, type: Date },
+    managementWallet: { required: true, type: String },
     name: { required: true, type: String },
     roleId: { required: true, type: String, unique: true },
     toolPolicy: [
       {
-        policyId: { required: true, type: String },
-        policyIpfsCid: { required: true, type: String },
+        description: { type: String },
         policyVarsSchema: [
           {
             defaultValue: { required: true, type: Schema.Types.Mixed },
-            paramId: { required: true, type: String },
+            // paramId: { required: true, type: String },
             paramName: { required: true, type: String },
             valueType: { required: true, type: String },
           },
         ],
-        toolId: { required: true, type: String },
         toolIpfsCid: { required: true, type: String },
       },
     ],
-    version: { required: true, type: String },
   },
   { timestamps: true }
 );

@@ -1,6 +1,7 @@
 import cors from 'cors';
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 
+import { DOMAIN } from '../constants';
 import {
   registerApp,
   getAppMetadata,
@@ -8,21 +9,26 @@ import {
   createRole,
   getRole,
   updateRole,
-  getAllRoles
+  getAllRoles,
 } from '../controllers/appController';
 
 export const appRouter = Router();
 
-type RequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<void>;
-
 const corsOptions = {
   optionsSuccessStatus: 200,
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    // FIXME: Don't allow localhost to hit production instances of this service.
     const allowedOrigins = [
-      /^http:\/localhost(:\d+)?$/, // localhost with any port
-      new RegExp(`^https?://(.+.)?${process.env.DOMAIN}$`), // Any subdomain (optional) of the configured domain
+      /^https?:\/\/localhost(:\d+)?$/, // localhost with any port
+      // eslint-disable-next-line no-useless-escape
+      new RegExp(`^https?:\/\/${DOMAIN}$`),
     ];
+
     if (allowedOrigins.some((regex) => regex.test(origin))) {
       callback(null, true);
     } else {
@@ -32,13 +38,13 @@ const corsOptions = {
 };
 
 // Apply CORS middleware to all routes in this router
-appRouter.use(cors(corsOptions));
+appRouter.use(cors({ optionsSuccessStatus: 200, origin: true }));
 
 // Use the RequestHandler type to cast each controller function
-appRouter.post('/registerApp', registerApp as RequestHandler);
-appRouter.get('/appMetadata/:appId', getAppMetadata as RequestHandler);
-appRouter.put('/updateApp', updateApp as RequestHandler);
-appRouter.post('/createRole', createRole as RequestHandler);
-appRouter.get('/role/:appId/:roleId', getRole as RequestHandler);
-appRouter.put('/updateRole', updateRole as RequestHandler);
-appRouter.get('/getAllRoles', getAllRoles as RequestHandler);
+appRouter.post('/registerApp', registerApp);
+appRouter.get('/appMetadata/:managementWallet', getAppMetadata);
+appRouter.put('/updateApp', updateApp);
+appRouter.post('/createRole', createRole);
+appRouter.get('/role/:managementWallet/:roleId', getRole);
+appRouter.put('/updateRole', updateRole);
+appRouter.get('/getAllRoles', getAllRoles);
