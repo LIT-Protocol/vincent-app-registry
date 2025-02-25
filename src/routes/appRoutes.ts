@@ -22,6 +22,7 @@ const corsOptions = {
       return;
     }
 
+    // FIXME: Don't allow localhost to hit production instances of this service.
     const allowedOrigins = [
       /^https?:\/\/localhost(:\d+)?$/, // localhost with any port
       // eslint-disable-next-line no-useless-escape
