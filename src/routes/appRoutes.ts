@@ -41,10 +41,10 @@ const corsOptions = {
 appRouter.use(cors(corsOptions));
 
 // Use the RequestHandler type to cast each controller function
-appRouter.post('/registerApp', registerApp);
-appRouter.get('/appMetadata/:managementWallet', getAppMetadata);
-appRouter.put('/updateApp', updateApp);
-appRouter.post('/createRole', createRole);
-appRouter.get('/role/:managementWallet/:roleId', getRole);
-appRouter.put('/updateRole', updateRole);
-appRouter.get('/getAllRoles', getAllRoles);
+appRouter.post('/api/v1/registerApp', registerApp);
+appRouter.get('/api/v1/appMetadata/:managementWallet', getAppMetadata);
+appRouter.put('/api/v1/updateApp', updateApp);
+appRouter.post('/api/v1/createRole', createRole);
+appRouter.get('/api/v1/role/:managementWallet/:roleId', getRole);
+appRouter.put('/api/v1/updateRole', updateRole);
+appRouter.get('/api/v1/getAllRoles', getAllRoles);
