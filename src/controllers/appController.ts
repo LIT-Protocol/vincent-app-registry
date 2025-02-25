@@ -174,6 +174,7 @@ export const createRole = async (req: Request, res: Response) => {
       description,
       name,
       roleId,
+      managementWallet,
       lastUpdated: new Date(),
       toolPolicy: toolPolicy.map((tp) => ({
         policyVarsSchema: tp.policyVarsSchema.map((pvs) => ({
