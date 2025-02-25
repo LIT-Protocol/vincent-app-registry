@@ -1,7 +1,7 @@
 import { SiweMessage, SiweError } from 'siwe';
 import { z } from 'zod';
 
-import { DOMAIN } from '../constants';
+// import { DOMAIN } from '../constants';
 
 import type { json } from './jsonSchema';
 
@@ -28,7 +28,8 @@ async function validateSIWEMessage(rawSignedMessage: string): Promise<string> {
   // Verify using the static verify method of SiweMessage
   const { error, success } = await siweMessage.verify({
     signature,
-    domain: DOMAIN,
+    // TODO: Add domain verification
+    // domain: DOMAIN,
   });
 
   if (!success) {
