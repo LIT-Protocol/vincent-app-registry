@@ -53,7 +53,7 @@ const RoleSchema: Schema = new mongoose.Schema(
         policyVarsSchema: [
           {
             defaultValue: { required: true, type: Schema.Types.Mixed },
-            paramId: { required: true, type: String },
+            // paramId: { required: true, type: String },
             paramName: { required: true, type: String },
             valueType: { required: true, type: String },
           },
