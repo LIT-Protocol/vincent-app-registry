@@ -222,6 +222,8 @@ export const getRole = async (req: Request, res: Response) => {
 
     res.json({
       data: {
+        roleName: role.name,
+        roleDescription: role.description,
         roleId: role.roleId,
         toolPolicy: role.toolPolicy.map((tp) => ({
           policyVarsSchema: tp.policyVarsSchema,
