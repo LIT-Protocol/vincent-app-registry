@@ -46,8 +46,8 @@ export const registerApp = async (req: Request, res: Response) => {
     res.json({ data: { app: newApp.toObject() }, success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      consola.error('ERROR: ', error.errors);
-      res.status(400).json({ message: error.errors, success: false });
+      consola.error('ERROR: ', JSON.stringify(error.errors));
+      res.status(400).json({ message: JSON.stringify(error.errors), success: false });
       return;
     }
     consola.error('ERROR: ', (error as Error).message);
@@ -117,9 +117,9 @@ export const updateApp = async (req: Request, res: Response) => {
     res.json({ data: { app: app.toObject() }, success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      consola.error('ERROR: ', error.errors);
+      consola.error('ERROR: ', JSON.stringify(error.errors));
 
-      res.status(400).json({ message: error.errors, success: false });
+      res.status(400).json({ message: JSON.stringify(error.errors), success: false });
       return;
     }
     consola.error('ERROR: ', (error as Error).message);
@@ -195,9 +195,9 @@ export const createRole = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      consola.error('ERROR: ', error.errors);
+      consola.error('ERROR: ', JSON.stringify(error.errors));
 
-      res.status(400).json({ message: error.errors, success: false });
+      res.status(400).json({ message: JSON.stringify(error.errors), success: false });
       return;
     }
     consola.error('ERROR: ', (error as Error).message);
@@ -287,9 +287,9 @@ export const updateRole = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      consola.error('ERROR: ', error.errors);
+      consola.error('ERROR: ', JSON.stringify(error.errors));
 
-      res.status(400).json({ message: error.errors, success: false });
+      res.status(400).json({ message: JSON.stringify(error.errors), success: false });
       return;
     }
     consola.error('ERROR: ', (error as Error).message);
@@ -336,9 +336,9 @@ export const getAllRoles = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      consola.error('ERROR: ', error.errors);
+      consola.error('ERROR: ', JSON.stringify(error.errors));
 
-      res.status(400).json({ message: error.errors, success: false });
+      res.status(400).json({ message: JSON.stringify(error.errors), success: false });
       return;
     }
     consola.error('ERROR: ', (error as Error).message);
