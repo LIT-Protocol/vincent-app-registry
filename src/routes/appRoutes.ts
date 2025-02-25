@@ -22,7 +22,7 @@ const corsOptions = {
     }
 
     const allowedOrigins = [
-      /^http:\/localhost(:\d+)?$/, // localhost with any port
+      /^https?:\/\/localhost(:\d+)?$/, // localhost with any port
       // eslint-disable-next-line no-useless-escape
       new RegExp(`^https?:\/\/${process.env.DOMAIN}$`),
     ];
