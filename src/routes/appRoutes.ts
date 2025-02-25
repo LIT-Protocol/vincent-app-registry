@@ -38,7 +38,7 @@ const corsOptions = {
 };
 
 // Apply CORS middleware to all routes in this router
-appRouter.use(cors(corsOptions));
+// appRouter.use(cors(corsOptions));
 
 // Use the RequestHandler type to cast each controller function
 appRouter.post('/api/v1/registerApp', registerApp);
