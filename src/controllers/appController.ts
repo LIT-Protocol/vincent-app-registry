@@ -4,27 +4,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 import { App, Role } from '../models/appModels';
-import { verifySIWEMessage } from '../routes/siweVerification';
+import { verifySIWEMessage } from '../siwe/siweVerification';
 
 // Define Zod schemas for input validation
 const registerAppSchema = z.object({
   contactEmail: z.string().email(),
   description: z.string(),
   name: z.string(),
-  signedMessage: z.object({
-    message: z.object({
-      address: z.string(),
-      chainId: z.number(),
-      domain: z.string(),
-      expirationTime: z.string().optional(),
-      issuedAt: z.string(),
-      nonce: z.string(),
-      statement: z.string(),
-      uri: z.string(),
-      version: z.string(),
-    }),
-    signature: z.string(),
-  }),
+  signedMessage: z.string(),
 });
 
 export const registerApp = async (req: Request, res: Response) => {
@@ -34,11 +21,7 @@ export const registerApp = async (req: Request, res: Response) => {
     let managementWallet: string;
 
     try {
-      const siweMessage = new SiweMessage(signedMessage.message);
-      managementWallet = await verifySIWEMessage({
-        message: siweMessage,
-        signature: signedMessage.signature,
-      });
+      managementWallet = await verifySIWEMessage(signedMessage);
     } catch (error) {
       res.status(401).json({ message: (error as Error).message, success: false });
       return;
@@ -98,20 +81,7 @@ const updateAppSchema = z.object({
   contactEmail: z.string().email(),
   description: z.string(),
   name: z.string(),
-  signedMessage: z.object({
-    message: z.object({
-      address: z.string(),
-      chainId: z.number(),
-      domain: z.string(),
-      expirationTime: z.string().optional(),
-      issuedAt: z.string(),
-      nonce: z.string(),
-      statement: z.string(),
-      uri: z.string(),
-      version: z.string(),
-    }),
-    signature: z.string(),
-  }),
+  signedMessage: z.string(),
 });
 
 export const updateApp = async (req: Request, res: Response) => {
@@ -121,16 +91,11 @@ export const updateApp = async (req: Request, res: Response) => {
     let managementWallet: string;
 
     try {
-      const siweMessage = new SiweMessage(signedMessage.message);
-      managementWallet = await verifySIWEMessage({
-        message: siweMessage,
-        signature: signedMessage.signature,
-      });
+      managementWallet = await verifySIWEMessage(signedMessage);
     } catch (error) {
       res.status(401).json({ message: (error as Error).message, success: false });
       return;
     }
-
     const app = await App.findOne({ managementWallet });
     if (!app) {
       res.status(404).json({ message: 'App not found or unauthorized', success: false });
@@ -171,20 +136,7 @@ const toolPolicySchema = z.object({
 const createRoleSchema = z.object({
   description: z.string(),
   name: z.string(),
-  signedMessage: z.object({
-    message: z.object({
-      address: z.string(),
-      chainId: z.number(),
-      domain: z.string(),
-      expirationTime: z.string().optional(),
-      issuedAt: z.string(),
-      nonce: z.string(),
-      statement: z.string(),
-      uri: z.string(),
-      version: z.string(),
-    }),
-    signature: z.string(),
-  }),
+  signedMessage: z.string(),
   toolPolicy: z.array(toolPolicySchema),
 });
 
@@ -195,11 +147,7 @@ export const createRole = async (req: Request, res: Response) => {
     let managementWallet: string;
 
     try {
-      const siweMessage = new SiweMessage(signedMessage.message);
-      managementWallet = await verifySIWEMessage({
-        message: siweMessage,
-        signature: signedMessage.signature,
-      });
+      managementWallet = await verifySIWEMessage(signedMessage);
     } catch (error) {
       res.status(401).json({ message: (error as Error).message, success: false });
       return;
@@ -279,20 +227,7 @@ const updateRoleSchema = z.object({
   description: z.string(),
   name: z.string(),
   roleId: z.string(),
-  signedMessage: z.object({
-    message: z.object({
-      address: z.string(),
-      chainId: z.number(),
-      domain: z.string(),
-      expirationTime: z.string().optional(),
-      issuedAt: z.string(),
-      nonce: z.string(),
-      statement: z.string(),
-      uri: z.string(),
-      version: z.string(),
-    }),
-    signature: z.string(),
-  }),
+  signedMessage: z.string(),
   toolPolicy: z.array(toolPolicySchema),
 });
 
@@ -305,11 +240,7 @@ export const updateRole = async (req: Request, res: Response) => {
     let managementWallet: string;
 
     try {
-      const siweMessage = new SiweMessage(signedMessage.message);
-      managementWallet = await verifySIWEMessage({
-        message: siweMessage,
-        signature: signedMessage.signature,
-      });
+      managementWallet = await verifySIWEMessage(signedMessage);
     } catch (error) {
       res.status(401).json({ message: (error as Error).message, success: false });
       return;

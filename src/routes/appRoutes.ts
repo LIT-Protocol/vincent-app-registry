@@ -1,6 +1,7 @@
 import cors from 'cors';
 import { Router } from 'express';
 
+import { DOMAIN } from '../constants';
 import {
   registerApp,
   getAppMetadata,
@@ -24,7 +25,7 @@ const corsOptions = {
     const allowedOrigins = [
       /^https?:\/\/localhost(:\d+)?$/, // localhost with any port
       // eslint-disable-next-line no-useless-escape
-      new RegExp(`^https?:\/\/${process.env.DOMAIN}$`),
+      new RegExp(`^https?:\/\/${DOMAIN}$`),
     ];
 
     if (allowedOrigins.some((regex) => regex.test(origin))) {
