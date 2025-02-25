@@ -1,5 +1,5 @@
+import consola from 'consola';
 import { Request, Response } from 'express';
-import { SiweMessage } from 'siwe';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -23,6 +23,7 @@ export const registerApp = async (req: Request, res: Response) => {
     try {
       managementWallet = await verifySIWEMessage(signedMessage);
     } catch (error) {
+      consola.error('ERROR: ', (error as Error).message);
       res.status(401).json({ message: (error as Error).message, success: false });
       return;
     }
@@ -45,9 +46,12 @@ export const registerApp = async (req: Request, res: Response) => {
     res.json({ data: { app: newApp.toObject() }, success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      consola.error('ERROR: ', error.errors);
       res.status(400).json({ message: error.errors, success: false });
       return;
     }
+    consola.error('ERROR: ', (error as Error).message);
+
     res.status(500).json({
       message: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false,
@@ -70,6 +74,8 @@ export const getAppMetadata = async (req: Request, res: Response) => {
       success: true,
     });
   } catch (error) {
+    consola.error('ERROR: ', (error as Error).message);
+
     res.status(500).json({
       message: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false,
@@ -98,7 +104,7 @@ export const updateApp = async (req: Request, res: Response) => {
     }
     const app = await App.findOne({ managementWallet });
     if (!app) {
-      res.status(404).json({ message: 'App not found or unauthorized', success: false });
+      res.status(404).json({ message: 'App not found', success: false });
       return;
     }
 
@@ -111,9 +117,13 @@ export const updateApp = async (req: Request, res: Response) => {
     res.json({ data: { app: app.toObject() }, success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      consola.error('ERROR: ', error.errors);
+
       res.status(400).json({ message: error.errors, success: false });
       return;
     }
+    consola.error('ERROR: ', (error as Error).message);
+
     res.status(500).json({
       message: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false,
@@ -185,9 +195,13 @@ export const createRole = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      consola.error('ERROR: ', error.errors);
+
       res.status(400).json({ message: error.errors, success: false });
       return;
     }
+    consola.error('ERROR: ', (error as Error).message);
+
     res.status(500).json({
       message: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false,
@@ -216,6 +230,8 @@ export const getRole = async (req: Request, res: Response) => {
       success: true,
     });
   } catch (error) {
+    consola.error('ERROR: ', (error as Error).message);
+
     res.status(500).json({
       message: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false,
@@ -271,9 +287,13 @@ export const updateRole = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      consola.error('ERROR: ', error.errors);
+
       res.status(400).json({ message: error.errors, success: false });
       return;
     }
+    consola.error('ERROR: ', (error as Error).message);
+
     res.status(500).json({
       message: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false,
@@ -316,9 +336,13 @@ export const getAllRoles = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      consola.error('ERROR: ', error.errors);
+
       res.status(400).json({ message: error.errors, success: false });
       return;
     }
+    consola.error('ERROR: ', (error as Error).message);
+
     res.status(500).json({
       message: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false,
